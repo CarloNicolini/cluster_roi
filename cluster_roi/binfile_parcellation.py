@@ -52,7 +52,7 @@
 import time as time
 from numpy import *
 from scipy.sparse import csc_matrix
-from .python_ncut_lib import *
+from python_ncut_lib import *
 
 # binfile_parcellate( infile, outfile, K ):
 #

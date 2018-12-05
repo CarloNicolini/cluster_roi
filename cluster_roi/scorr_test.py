@@ -61,22 +61,22 @@
 # import the different functions we will use from pyClusterROI
 
 # only need one of these, based on which connectivity metric you prefer
-from .make_local_connectivity_ones import *
-from .make_local_connectivity_scorr import *
-from .make_local_connectivity_tcorr import *
+from make_local_connectivity_ones import *
+from make_local_connectivity_scorr import *
+from make_local_connectivity_tcorr import *
 
 # do not need this if you are peforming group mean clustering
-from .binfile_parcellation import *
+from binfile_parcellation import *
 
 # import the functions for group clustering, only need one of these
-from .group_binfile_parcellation import *
-from .group_mean_binfile_parcellation import *
+from group_binfile_parcellation import *
+from group_mean_binfile_parcellation import *
 
 # import if you want to write the results out to nifti, only need
 # one of these, probably just want the one that does renumbering,
 # why do i include the other one? no idea.
-from .make_image_from_bin import *
-from .make_image_from_bin_renum import *
+from make_image_from_bin import *
+from make_image_from_bin_renum import *
 
 import os
 from time import time
@@ -160,12 +160,11 @@ group_mean_binfile_parcellate( scorr_conn_files,\
 for k in NUM_CLUSTERS:
     ind_clust_files=[]
     for i in range(0,len(infiles)):
-	ind_clust_files.append('rm_scorr_indiv_cluster_'+str(i)+\
-	    '_'+str(k)+'.npy')
+        ind_clust_files.append('rm_scorr_indiv_cluster_'+str(i)+ '_'+str(k)+'.npy')
 
-    print('2-level parcellate scorr',k)
-    group_binfile_parcellate(ind_clust_files,\
-	'rm_group_scorr_cluster_'+str(k)+'.npy',k,mask_voxels)
+        print('2-level parcellate scorr',k)
+        group_binfile_parcellate(ind_clust_files,\
+        'rm_group_scorr_cluster_'+str(k)+'.npy',k,mask_voxels)
 
 ##### Step 4. Convert the binary output .npy files to nifti
 # this can be done with or without renumbering the clusters to make sure they

@@ -49,44 +49,47 @@
 # this scripts requires NumPy (numpy.scipy.org), SciPy (www.scipy.org), and
 # NiBabel (http://niftilib.sourceforge.net/pynifti/) and the pyClusterROI
 # toolbox to be installed in a directory that is accessible through PythonPath
+# import sys
 
 # this is how you would add a directory to the search path, this is useful if
 # you are running this script from a directory other than the directory where
 # the pyClusterROI is installed. Or if for some reason your NumPy, SciPy, or
 # NiBabel libraries are in a non-standard location, do this before you import
 # the files/libraries that require the change in path
-# import sys
 # sys.path.append("/home/user/python_toolboxes")
 
 # import the different functions we will use from pyClusterROI
 
 # only need one of these, based on which connectivity metric you prefer
-from .make_local_connectivity_ones import *
-from .make_local_connectivity_scorr import *
-from .make_local_connectivity_tcorr import *
+from make_local_connectivity_ones import *
+from make_local_connectivity_scorr import *
+from make_local_connectivity_tcorr import *
 
 # do not need this if you are peforming group mean clustering
-from .binfile_parcellation import *
+from binfile_parcellation import *
 
 # import the functions for group clustering, only need one of these
-from .group_binfile_parcellation import *
-from .group_mean_binfile_parcellation import *
+from group_binfile_parcellation import *
+from group_mean_binfile_parcellation import *
 
 # import if you want to write the results out to nifti, only need
 # one of these, probably just want the one that does renumbering,
 # why do i include the other one? no idea.
-from .make_image_from_bin import *
-from .make_image_from_bin_renum import *
+from make_image_from_bin import *
+from make_image_from_bin_renum import *
 
 from time import time
+import nibabel as nb
+import os
 
 T0 = time()
-
+print('starting time is ', T0)
 # the name of the maskfile that we will be using
 maskname="gm_maskfile.nii.gz"
 
 # make a list of all of the input fMRI files that we will be using
 infiles = [  'subject1.nii.gz', 'subject2.nii.gz', 'subject3.nii.gz' ]
+
 
 ##### Step 1. Individual Conenctivity Matrices 
 # first we need to make the individual connectivity matrices, I will
@@ -96,7 +99,7 @@ infiles = [  'subject1.nii.gz', 'subject2.nii.gz', 'subject3.nii.gz' ]
 # the easiest is random clustering which doesn't require any functional
 # data, just the mask
 print('ones connectivity')
-make_local_connectivity_ones( maskname, 'rm_ones_connectivity.npy')
+if not os.path.isfile('rm_ones_connectivity.npy'): make_local_connectivity_ones( maskname, 'rm_ones_connectivity.npy')
 
 
 # construct the connectivity matrices using tcorr and a r>0.5 threshold
@@ -111,16 +114,6 @@ for idx, in_file in enumerate(infiles):
     make_local_connectivity_tcorr( in_file, maskname, outname, 0.5 )
 
 
-# construct the connectivity matrices using scorr and a r>0.5 threshold
-# This can take a _really_ long time
-for idx, in_file in enumerate(infiles):
-
-    # construct an output filename for this file
-    outname='rm_scorr_conn_'+str(idx)+'.npy'
-
-    print('scorr connectivity',in_file)
-    # call the funtion to make connectivity
-    make_local_connectivity_scorr( in_file, maskname, outname, 0.5 )
 
 ##### Step 2. Individual level clustering
 # next we will do the individual level clustering, this is not performed for 
@@ -143,15 +136,6 @@ for idx, in_file in enumerate(infiles):
     print('tcorr parcellate',in_file)
     binfile_parcellate(infile, outfile, NUM_CLUSTERS)
 
-# for scorr
-for idx, in_file in enumerate(infiles):
-
-    # construct filenames
-    infile='rm_scorr_conn_'+str(idx)+'.npy'
-    outfile='rm_scorr_indiv_cluster_'+str(idx)
-
-    print('scorr parcellate',in_file)
-    binfile_parcellate(infile, outfile, NUM_CLUSTERS)
 
 ##### Step 3. Group level clustering
 # perform the group level clustering for clustering results containing 100, 150,
@@ -159,8 +143,10 @@ for idx, in_file in enumerate(infiles):
 # random clustering
 
 # for both group-mean and 2-level clustering we need to know the number of
-# nonzero voxels in in the mask 
-mask_voxels=(nb.load(maskname).get_data().flatten()>0).sum()
+# voxels in in the mask, which for us is 32254 
+mask_ = nb.load(maskname).get_data()
+mask_voxels=len(mask_[mask_!=0])
+print('NUMBER OF NONZERO VOXELS IN THE MASK = ', mask_voxels)
 
 # group_mean clustering is pretty simple, input the connectivity files and run.
 # we can perform multiple clusterings with this function, so once again the
@@ -171,12 +157,6 @@ print('group-mean parcellate tcorr')
 group_mean_binfile_parcellate( tcorr_conn_files,\
     'rm_group_mean_tcorr_cluster', NUM_CLUSTERS,mask_voxels);
 
-# now group mean cluster scorr files
-scorr_conn_files=['rm_scorr_conn_0.npy','rm_scorr_conn_1.npy',\
-    'rm_scorr_conn_2.npy']
-print('group-mean parcellate scorr')
-group_mean_binfile_parcellate( scorr_conn_files,\
-    'rm_group_mean_scorr_cluster', NUM_CLUSTERS, mask_voxels);
 
 # the 2-level clustering has to be performed once for each desired clustering
 # level, and requires individual level clusterings as inputs
@@ -190,16 +170,6 @@ for k in NUM_CLUSTERS:
     group_binfile_parcellate(ind_clust_files,\
         'rm_group_tcorr_cluster_'+str(k)+'.npy',k,mask_voxels)
 
-# now for scorr 
-for k in NUM_CLUSTERS:
-    ind_clust_files=[]
-    for i in range(0,len(infiles)):
-        ind_clust_files.append('rm_scorr_indiv_cluster_'+str(i)+\
-            '_'+str(k)+'.npy')
-
-    print('2-level parcellate scorr',k)
-    group_binfile_parcellate(ind_clust_files,\
-        'rm_group_scorr_cluster_'+str(k)+'.npy',k,mask_voxels)
 
 ##### Step 4. Convert the binary output .npy files to nifti
 # this can be done with or without renumbering the clusters to make sure they
@@ -220,25 +190,16 @@ for k in NUM_CLUSTERS:
     imgfile='rm_group_mean_tcorr_cluster_'+str(k)+'.nii.gz'
     make_image_from_bin_renum(imgfile,binfile,maskname)
 
-for k in NUM_CLUSTERS:
-    binfile='rm_group_mean_scorr_cluster_'+str(k)+'.npy'
-    imgfile='rm_group_mean_scorr_cluster_'+str(k)+'.nii.gz'
-    make_image_from_bin_renum(imgfile,binfile,maskname)
-
 # write out for group 2-level clustering
 for k in NUM_CLUSTERS:
     binfile='rm_group_tcorr_cluster_'+str(k)+'.npy'
     imgfile='rm_group_tcorr_cluster_'+str(k)+'.nii.gz'
     make_image_from_bin_renum(imgfile,binfile,maskname)
 
-for k in NUM_CLUSTERS:
-    binfile='rm_group_scorr_cluster_'+str(k)+'.npy'
-    imgfile='rm_group_scorr_cluster_'+str(k)+'.nii.gz'
-    make_image_from_bin_renum(imgfile,binfile,maskname)
 
 T1 = time()
 
 print('******************************')
-print('time is ', T1-T0)
+print('time taken to complete tcorr based spatially constrained clustering is ', T1-T0)
 ##### FIN
 

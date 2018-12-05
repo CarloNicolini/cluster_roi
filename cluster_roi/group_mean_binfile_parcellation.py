@@ -55,7 +55,7 @@
 import time as time
 from numpy import *
 from scipy.sparse import csc_matrix
-from .python_ncut_lib import *
+from python_ncut_lib import *
 
 
 # group_mean_binfile_parcellate( infiles, outfile, K ):

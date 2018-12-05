@@ -55,7 +55,7 @@
 from numpy import array
 from scipy import *
 from scipy.sparse import *
-from .python_ncut_lib import *
+from python_ncut_lib import *
 
 # group_img=group_binfile_parcellate( infiles, outfile, K,n_voxels ):
 #
@@ -132,7 +132,7 @@ def group_binfile_parcellate( infiles, outfile, K, n_voxels ):
     group_img=eigenvec_discrete[:,0]
 
     for i in range(1,K):
-    	if not i%10: print(i)
+        if not i%10: print(i)
         group_img=group_img+(i+1)*eigenvec_discrete[:,i]
 
     save(outfile,group_img.todense())
