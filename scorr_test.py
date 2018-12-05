@@ -61,29 +61,29 @@
 # import the different functions we will use from pyClusterROI
 
 # only need one of these, based on which connectivity metric you prefer
-from make_local_connectivity_ones import *
-from make_local_connectivity_scorr import *
-from make_local_connectivity_tcorr import *
+from .make_local_connectivity_ones import *
+from .make_local_connectivity_scorr import *
+from .make_local_connectivity_tcorr import *
 
 # do not need this if you are peforming group mean clustering
-from binfile_parcellation import *
+from .binfile_parcellation import *
 
 # import the functions for group clustering, only need one of these
-from group_binfile_parcellation import *
-from group_mean_binfile_parcellation import *
+from .group_binfile_parcellation import *
+from .group_mean_binfile_parcellation import *
 
 # import if you want to write the results out to nifti, only need
 # one of these, probably just want the one that does renumbering,
 # why do i include the other one? no idea.
-from make_image_from_bin import *
-from make_image_from_bin_renum import *
+from .make_image_from_bin import *
+from .make_image_from_bin_renum import *
 
 import os
 from time import time
 import nibabel as nb
 
 T0 = time()
-print 'starting at ', T0
+print('starting at ', T0)
 
 # the name of the maskfile that we will be using
 maskname="gm_maskfile.nii.gz"
@@ -98,7 +98,7 @@ infiles = [  'subject1.nii.gz', 'subject2.nii.gz', 'subject3.nii.gz' ]
 
 # the easiest is random clustering which doesn't require any functional
 # data, just the mask
-print 'ones connectivity'
+print('ones connectivity')
 if not os.path.isfile('./rm_ones_connectivity.npy'): make_local_connectivity_ones( maskname, 'rm_ones_connectivity.npy')
 
 
@@ -110,7 +110,7 @@ for idx, in_file in enumerate(infiles):
     # construct an output filename for this file
     outname='rm_scorr_conn_'+str(idx)+'.npy'
 
-    print 'scorr connectivity',in_file
+    print('scorr connectivity',in_file)
     # call the funtion to make connectivity
     make_local_connectivity_scorr( in_file, maskname, outname, 0.5 )
 
@@ -132,7 +132,7 @@ for idx, in_file in enumerate(infiles):
     infile='rm_scorr_conn_'+str(idx)+'.npy'
     outfile='rm_scorr_indiv_cluster_'+str(idx)
 
-    print 'scorr parcellate',in_file
+    print('scorr parcellate',in_file)
     binfile_parcellate(infile, outfile, NUM_CLUSTERS)
 
 ##### Step 3. Group level clustering
@@ -144,12 +144,12 @@ for idx, in_file in enumerate(infiles):
 # voxels in in the mask, which for us is 32254 
 mask_ = nb.load(maskname).get_data()
 mask_voxels=len(mask_[mask_==1])
-print 'NUMBER OF NONZERO VOXELS IN THE MASK = ', mask_voxels
+print('NUMBER OF NONZERO VOXELS IN THE MASK = ', mask_voxels)
 
 # now group mean cluster scorr files
 scorr_conn_files=['rm_scorr_conn_0.npy','rm_scorr_conn_1.npy',\
     'rm_scorr_conn_2.npy']
-print 'group-mean parcellate scorr'
+print('group-mean parcellate scorr')
 group_mean_binfile_parcellate( scorr_conn_files,\
     'rm_group_mean_scorr_cluster', NUM_CLUSTERS, mask_voxels);
 
@@ -163,7 +163,7 @@ for k in NUM_CLUSTERS:
 	ind_clust_files.append('rm_scorr_indiv_cluster_'+str(i)+\
 	    '_'+str(k)+'.npy')
 
-    print '2-level parcellate scorr',k
+    print('2-level parcellate scorr',k)
     group_binfile_parcellate(ind_clust_files,\
 	'rm_group_scorr_cluster_'+str(k)+'.npy',k,mask_voxels)
 
@@ -194,7 +194,7 @@ for k in NUM_CLUSTERS:
 
 T1 = time()
 
-print '******************************'
-print 'time taken to complete scorr based spatially constrained clustering is ', T1-T0
+print('******************************')
+print('time taken to complete scorr based spatially constrained clustering is ', T1-T0)
 ##### FIN
 

@@ -111,9 +111,9 @@ def make_local_connectivity_ones( maskfile, outfile ):
     # elements of the mask
     iv=nonzero(mskdat)[0]
     m=len(iv)
-    print m, ' # of non-zero voxels in the mask'
+    print(m, ' # of non-zero voxels in the mask')
     # construct a sparse matrix from the mask
-    msk=csc_matrix((range(1,m+1),(iv,zeros(m))),shape=(prod(msz),1))
+    msk=csc_matrix((list(range(1,m+1)),(iv,zeros(m))),shape=(prod(msz),1))
 
     sparse_i=[]
     sparse_j=[]
@@ -121,7 +121,7 @@ def make_local_connectivity_ones( maskfile, outfile ):
 
     # loop over all of the voxels in the mask 	
     for i in range(0,m):
-    	if i % 1000 == 0: print 'voxel #', i
+    	if i % 1000 == 0: print('voxel #', i)
 
         # calculate the voxels that are in the 3D neighborhood
         # of the center voxel

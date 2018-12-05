@@ -218,7 +218,7 @@ def discretisation( eigen_vec ):
             # discretise the result by setting the max of each row=1 and
             # other values to 0
             j=reshape(asarray(tDiscrete.argmax(1)),n)
-            eigenvec_discrete=csc_matrix((ones(len(j)),(range(0,n), \
+            eigenvec_discrete=csc_matrix((ones(len(j)),(list(range(0,n)), \
                 array(j))),shape=(n,k))
 
             # calculate a rotation to bring the discrete eigenvectors cluster to
@@ -229,8 +229,7 @@ def discretisation( eigen_vec ):
                 U, S, Vh = svd(tSVD)
             except LinAlgError:
                 # catch exception and go back to the beginning of the loop
-                print >> sys.stderr, \
-                    "SVD did not converge, randomizing and trying again"
+                print("SVD did not converge, randomizing and trying again", file=sys.stderr)
                 break
 
             # test for convergence
